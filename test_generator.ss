@@ -1,5 +1,4 @@
 #lang scheme/base
-;(require racket/file)
     
 #|
 generate-test - Главная функция программы генерации тестов
@@ -12,6 +11,7 @@ test-results.txt - ответы на тесты в том же порядке, �
 указываются лишь максимальные границы.
 Функции, генерирующие различные виды графов описаны ниже.
 |#
+
 
 (define (generate-tests number)
   (define (pick-random lst)
@@ -28,7 +28,7 @@ test-results.txt - ответы на тесты в том же порядке, �
   (define (loop n result)
     (if (< n 1)
         result
-        (loop (- n 1) (cons ((pick-random (list create-full-graph create-stars create-polygon)) 8) result))))
+        (loop (- n 1) (cons ((pick-random (list create-full-graph create-stars create-polygon)) 20) result))))
   (let ((out1 (open-output-file "test.txt" #:exists 'truncate))
         (out2 (open-output-file "test-results.txt" #:exists 'truncate)))
     (writing-to-file out1 out2 (loop number '()))

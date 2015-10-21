@@ -30,7 +30,7 @@
       (display " ")
       (display "true answers")
       (newline)
-      (print (truncate (* (/ proc (length lst)) 100.0)))
+      (print (round (* (/ proc (length lst)) 100.0)))
       (display "%\n")
       (print lst)))
   (let ((tests (file->list "test.txt"))

@@ -59,7 +59,7 @@
                            (lambda (x) (= 0 (car x)))
                            population)))
     (cond ((not (null? possible-answers))
-           (list #t (car possible-answers)))
+           (list #t (length (cadr (car possible-answers))) (cadr (car possible-answers)) ))
           ((or
             (= population-count 0)
             (null? population))
@@ -101,7 +101,7 @@
               y)))))
    
 (define (merge ind1 ind2 lst)
-  (map (lambda (x y) (if (= (random 2) 0) x y)) ind1 ind2))
+  (map (lambda (x y) (pick-random (list x y (pick-random lst)))) ind1 ind2))
 
 (define (merge-many ind1 ind2 lst size result)
   (if (= size 0)
@@ -127,20 +127,43 @@
           ((and (> sumw-lst rnd) (< (- sumw-lst (car (car lst)) 0.01) rnd))
            (car lst))
           (else (pick-random-by-weight sum (cdr lst))))))
-    
+
+
 (define (ask-graph)
   (print '(Please enter graph))
   (newline)
   (let ((graph (read))
         (k (read)))
-    (let ((result (genetic graph k k (list (list #f)))))
-      (if (car result)
-          (begin
-            (print (car result))
-            (newline)
-            (print (length (car (cdr (car (cdr result))))))
-            (newline)
-            (print (car (cdr (car (cdr result))))))
-          (print (car result))))))
+    (let ((result (genetic graph k k (list #f))))
+      (print result))))
     
-(ask-graph) 
+;(ask-graph)
+
+(require racket/file)
+(define (with-files)
+  (define (call-genetic question)
+    (genetic (car question) 50 (cadr question) (list #f)))
+  (define (progress out lst size)
+    (if (null? lst)
+        (display "all tests have done!\n")
+        (begin
+          (display "working on ")
+          (display (- size (length (cdr lst))))
+          (display " of ")
+          (display size)
+          (newline)
+          (display (call-genetic (car lst)) out)
+          (display "\n" out)
+          (progress out (cdr lst) size))))
+    
+  (let ((cases (file->list "test.txt"))
+        (out (open-output-file "genetic-algorithm-result.txt" #:exists 'truncate)))
+    (progress out cases (length cases))
+    (close-output-port out)))
+
+(with-files)
+   
+
+
+
+
