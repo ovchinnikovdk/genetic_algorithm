@@ -14,12 +14,31 @@
 (define (pick-random lst)
   (list-ref lst (random (length lst))))
 
-(define (my-member? lst v)
-  (not (null? (filter (lambda (x)
-                        (and
-                         (equal? (car x) (car v))
-                         (equal? (cadr x) (cadr v))))
-                      lst))))
+(define (calculate-edges-weights lst full-lst result)
+  (if (null? lst)
+      (reverse result)
+      (begin (let ((calc (car (calculate-cover (list (car lst)) full-lst (length full-lst) 0))))
+               (if (= calc 0)
+                   (if (null? result)
+                       (calculate-edges-weights (cdr lst) full-lst
+                                                (cons 1000000.0 result))
+                       (calculate-edges-weights (cdr lst) full-lst
+                                                (cons (+ 1000000.0 (car result)) result)))
+                   (if (null? result)
+                       (calculate-edges-weights (cdr lst) full-lst
+                                                (cons (/ 1 calc) result))
+                       (calculate-edges-weights (cdr lst) full-lst
+                                                (cons (+ (/ 1 calc) (car result)) result))))))))
+
+(define (get-edge-weight prev elem lst weights)
+  (if (null? (cdr lst))
+      (- (car weights) prev)
+      (if (and
+           (equal? (car elem) (car lst))
+           (equal? (cadr elem) (cadr lst)))
+          (- (car weights) prev)
+          (get-edge-weight (car weights) elem (cdr lst) (cdr weights)))))
+                              
 
 (define (calculate-cover individ lst lst-size result)
   (cond ((null? lst)
@@ -29,10 +48,10 @@
         (else
          (calculate-cover individ (cdr lst) lst-size result))))
 
-(define (make-one-individ lst k result)
-  (if (= k 0)
+(define (make-one-individ lst chromo-size result)
+  (if (= chromo-size 0)
       result
-      (make-one-individ lst (- k 1) (cons (pick-random lst) result))))
+      (make-one-individ lst (- chromo-size 1) (cons (pick-random lst) result))))
 
 (define (generate-k-individs lst chromo-size k result)
   (if (or
@@ -41,20 +60,16 @@
       result
       (generate-k-individs lst chromo-size (- k 1) (cons (make-one-individ lst chromo-size '()) result)))) 
 
-(define (genetic lst individs-count chromo-count result)
+(define (genetic lst weights individs-count chromo-count result)
   (let ((first-population (map
                            (lambda (x) (calculate-cover x lst (length lst) 0))
                            (generate-k-individs lst chromo-count individs-count '()))))
-    (let ((answer (genetic-driver-loop first-population lst 20)))
+    (let ((answer (genetic-driver-loop first-population lst weights 50)))
       (if (not (car answer))
           (car result)
-          (genetic lst individs-count (- chromo-count 1) (cons answer result))))))
+          (genetic lst weights individs-count (- chromo-count 1) (cons answer result))))))
              
-            
-          
-          
-
-(define (genetic-driver-loop population lst population-count)
+(define (genetic-driver-loop population lst weights population-count)
   (let ((possible-answers (filter
                            (lambda (x) (= 0 (car x)))
                            population)))
@@ -66,30 +81,33 @@
            (list #f))
           (else
            (genetic-driver-loop
-            (next-generation population lst)
+            (next-generation population lst weights)
             lst
+            weights
             (- population-count 1))))))
 
-(define (next-generation population lst)
+(define (next-generation population lst weights)
   (let ((calc-popul (map
                      (lambda (x) (cons (/ 1 (car x)) (cdr x)))
                      population)))
     (map (lambda (x y)
-           (crossingover (car (cdr x)) (car (cdr y)) lst))
-         (get-parents calc-popul (length calc-popul) '())
-         (get-parents calc-popul (length calc-popul) '()))))
+           (crossingover (car (cdr x)) (car (cdr y)) lst weights))
+         (get-parents calc-popul (length calc-popul) '() lst)
+         (get-parents calc-popul (length calc-popul) '() lst))))
 
-(define (get-parents population size result)
+(define (get-parents population size result lst)
   (if (= size 0)
       result
-      (get-parents population
-                   (- size 1)
-                   (cons (pick-random-by-weight (length population) population) result))))
+      (let ((pick (calculate-cover (pick-random-by-weight population) lst (length lst) 0)))
+        (get-parents population
+                     (- size 1)
+                     (cons (cons (/ 1 (car pick)) (cdr pick)) result)
+                     lst))))
                    
-(define (crossingover ind1 ind2 lst)
+(define (crossingover ind1 ind2 lst weights)
   (find-min (map
              (lambda (x) (calculate-cover x lst (length lst) 0))
-             (merge-many ind1 ind2 lst 4 '()))))
+             (merge-many ind1 ind2 lst weights 3 '()))))
 
 (define (find-min lst)
   (let ((y (car lst)))
@@ -100,13 +118,27 @@
               m
               y)))))
    
-(define (merge ind1 ind2 lst)
-  (map (lambda (x y) (pick-random (list x y (pick-random lst)))) ind1 ind2))
+(define (merge ind1 ind2 lst weights)
+  #|(display "ind1:\n")
+  (print ind1)|#
+  (map (lambda (x y)
+         (let ((rnd-elem (pick-random-by-weight2 lst weights)))
+           #|(display "heeeey\nx ")
+           (print x)
+           (display "\ny ")
+           (print y)
+           (display "\nrnd-elem ")
+           (print rnd-elem)|#
+           (let ((possible-lst (list
+                         (list (get-edge-weight 0 x lst weights) x)
+                         (list (get-edge-weight 0 y lst weights) y)
+                         (list (get-edge-weight 0 rnd-elem lst weights) rnd-elem))))
+             (pick-random-by-weight possible-lst)))) ind1 ind2))
 
-(define (merge-many ind1 ind2 lst size result)
+(define (merge-many ind1 ind2 lst weights size result)
   (if (= size 0)
       result
-      (merge-many ind1 ind2 lst (- size 1) (cons (merge ind1 ind2 lst) result)))) 
+      (merge-many ind1 ind2 lst weights (- size 1) (cons (merge ind1 ind2 lst weights) result)))) 
      
 #|Функция sum-weight.
 Параметры: список, где в каждом вложенном списке первый элемент - вес; накопитель результата.
@@ -119,15 +151,37 @@
 #|Функция pick-random-by-weight.
 Параметры: сумма весов всего списка, сам список
 Результат: случайный(с учетом веса) элемент списка|#
-(define (pick-random-by-weight sum lst)
-  (let ((rnd (/ (random (truncate (* sum 100000))) 100000.0))
-        (sumw-lst (sum-weight lst 0.0)))
-    (cond ((null? (cdr lst))
-           (car lst))
-          ((and (> sumw-lst rnd) (< (- sumw-lst (car (car lst)) 0.01) rnd))
-           (car lst))
-          (else (pick-random-by-weight sum (cdr lst))))))
+(define (pick-random-by-weight lst)
+  (define (get-weights lst result)
+    (if (null? lst)
+        (reverse result)
+        (if (null? result)
+            (get-weights (cdr lst) (cons (car (car lst)) result))
+            (get-weights (cdr lst) (cons (+ (car (car lst)) (car result)) result)))))
+  (define (get-elems lst result)
+    (if (null? lst)
+        (reverse result)
+        (get-elems (cdr lst) (cons (cadr (car lst)) result))))
+  (let ((elems (get-elems lst '()))
+        (weights (get-weights lst '())))
+    ;(print elems)
+    ;(newline)
+    (let ((elem (pick-random-by-weight2 elems weights)))
+      elem)))
+      
 
+(define (pick-random-by-weight2 lst weights)
+  (define (loop-search number lst weights prev-sum)
+    (cond ((or
+            (null? (cdr lst))
+            (null? (cdr weights)))
+           (car lst))
+          ((and (> number prev-sum) (< number (- (car weights) 0.001)))
+           (car lst))
+          (else (loop-search number (cdr lst) (cdr weights) (car weights))))) 
+  (let ((sum (list-ref weights (- (length weights) 1))))
+    (let ((rnd (/ (random (truncate (* sum 100000))) 100000.0)))
+      (loop-search rnd lst weights 0))))
 
 (define (ask-graph)
   (print '(Please enter graph))
@@ -142,7 +196,7 @@
 (require racket/file)
 (define (with-files)
   (define (call-genetic question)
-    (genetic (car question) 50 (cadr question) (list #f)))
+    (genetic (car question) (calculate-edges-weights (car question) (car question) '()) 40 (cadr question) (list #f)))
   (define (progress out lst size)
     (if (null? lst)
         (display "all tests have done!\n")

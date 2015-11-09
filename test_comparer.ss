@@ -2,6 +2,12 @@
 
 (require racket/file)
 
+#|
+Функция compare
+Результат: сравнение правильных результатов тестов из файла test-results.txt
+и результата работы генетического алгоритма из файла genetic-algorithm-result.txt
+|#
+
 (define (compare)
   (define (edge-is-covered? lst edge)
     (if (null? lst)
@@ -51,3 +57,4 @@
          tests
          true-answers
          answers))))
+(compare)
