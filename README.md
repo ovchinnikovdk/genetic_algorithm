@@ -13,6 +13,7 @@
 2) Количество потомков у каждых двух родителей<br/>
   - параметр к merge-many - "size", вызывается в crossingover.<br/>
 3) Количество особей в популяции параметр "individs-count" в функции genetic <br/><br/>
+#
 Genetic algorithm, which solves the problem of searching minimum edge cover set. <br/>
 Author: Dmitriy Ovchinnikov<br/>
 Language: Scheme/base, Racket.<br/>
