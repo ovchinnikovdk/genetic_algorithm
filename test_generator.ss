@@ -28,7 +28,7 @@ test-results.txt - ответы на тесты в том же порядке, �
   (define (loop n result)
     (if (< n 1)
         result
-        (loop (- n 1) (cons ((pick-random (list create-stars create-polygon create-full-graph)) 40) result))))
+        (loop (- n 1) (cons ((pick-random (list create-stars create-polygon create-full-graph)) 20) result))))
   (let ((out1 (open-output-file "test.txt" #:exists 'truncate))
         (out2 (open-output-file "test-results.txt" #:exists 'truncate)))
     (writing-to-file out1 out2 (loop number '()))
@@ -90,7 +90,7 @@ test-results.txt - ответы на тесты в том же порядке, �
   (let ((k (random max))
         (size (+ (random (- max 3)) 3)))
     (let ((res (main-loop 1 size '())))
-      (if (< k size)
+      (if (< k (truncate (/ size 2)))
           (list (list res k) #f)
-          (list (list res k) (list #t size))))))
+          (list (list res k) (list #t (truncate (/ size 2))))))))
   

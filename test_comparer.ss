@@ -25,9 +25,20 @@
     (define (calculate-procent lst count)
       (if (null? lst)
           count
-          (if (car lst)
+          (if (not (list? (car lst)))
               (calculate-procent (cdr lst) (+ count 1))
               (calculate-procent (cdr lst) count))))
+    (define (print-lst lst count)
+      (cond ((null? lst)
+             (display "..."))
+            ((list? (car lst))
+             (begin
+               (display count)
+               (display ". ")
+               (display (car lst))
+               (display "\n")
+               (print-lst (cdr lst) (+ count 1))))
+            (else (print-lst (cdr lst) (+ count 1)))))
     (newline)
     (let ((proc (calculate-procent lst 0)))
       (print proc)
@@ -38,21 +49,23 @@
       (newline)
       (print (round (* (/ proc (length lst)) 100.0)))
       (display "%\n")
-      (print lst)))
+      (print-lst lst 1)))
   (let ((tests (file->list "test.txt"))
         (true-answers (file->list "test-results.txt"))
         (answers (file->list "genetic-algorithm-result.txt")))
     (statistics (map (lambda (test true-answer answer)
            (if (list? true-answer)
                (if (not (list? answer))
-                   #f
-                   (if (not (= (cadr true-answer) (cadr answer)))
-                       #f
+                   (list #f "got" answer "expected " true-answer)
+                   (if (and
+                        (not (= (cadr true-answer) (cadr answer)))
+                        (not (> (cadr true-answer) (cadr answer))))
+                         (list #f "got" answer "expected<>" true-answer)
                        (if (covered? (caddr answer) (car test))
                            #t
-                           #f)))
+                           (list #f "not covered"))))
                (if (list? answer)
-                   #f
+                   (list #f "got" answer "expected" true-answer)
                    #t)))
          tests
          true-answers

@@ -64,7 +64,7 @@
   (let ((first-population (map
                            (lambda (x) (calculate-cover x lst (length lst) 0))
                            (generate-k-individs lst chromo-count individs-count '()))))
-    (let ((answer (genetic-driver-loop first-population lst weights 50)))
+    (let ((answer (genetic-driver-loop first-population lst weights 80)))
       (if (not (car answer))
           (car result)
           (genetic lst weights individs-count (- chromo-count 1) (cons answer result))))))
@@ -107,7 +107,7 @@
 (define (crossingover ind1 ind2 lst weights)
   (find-min (map
              (lambda (x) (calculate-cover x lst (length lst) 0))
-             (merge-many ind1 ind2 lst weights 3 '()))))
+             (merge-many ind1 ind2 lst weights 5 '()))))
 
 (define (find-min lst)
   (let ((y (car lst)))
@@ -119,16 +119,8 @@
               y)))))
    
 (define (merge ind1 ind2 lst weights)
-  #|(display "ind1:\n")
-  (print ind1)|#
   (map (lambda (x y)
          (let ((rnd-elem (pick-random-by-weight2 lst weights)))
-           #|(display "heeeey\nx ")
-           (print x)
-           (display "\ny ")
-           (print y)
-           (display "\nrnd-elem ")
-           (print rnd-elem)|#
            (let ((possible-lst (list
                          (list (get-edge-weight 0 x lst weights) x)
                          (list (get-edge-weight 0 y lst weights) y)
@@ -164,24 +156,23 @@
         (get-elems (cdr lst) (cons (cadr (car lst)) result))))
   (let ((elems (get-elems lst '()))
         (weights (get-weights lst '())))
-    ;(print elems)
-    ;(newline)
     (let ((elem (pick-random-by-weight2 elems weights)))
       elem)))
       
 
 (define (pick-random-by-weight2 lst weights)
-  (define (loop-search number lst weights prev-sum)
-    (cond ((or
-            (null? (cdr lst))
-            (null? (cdr weights)))
-           (car lst))
-          ((and (> number prev-sum) (< number (- (car weights) 0.001)))
-           (car lst))
-          (else (loop-search number (cdr lst) (cdr weights) (car weights))))) 
+  (define (bin-search number lst weights a b)
+    (let ((mid (+ a (truncate (/ (- b a) 2)))))
+      (cond ((or
+             (= a b)
+             (> a b))
+             (list-ref lst b))
+            ((> (list-ref weights mid) number)
+             (bin-search number lst weights a mid))
+            (else (bin-search number lst weights (+ mid 1) b)))))
   (let ((sum (list-ref weights (- (length weights) 1))))
     (let ((rnd (/ (random (truncate (* sum 100000))) 100000.0)))
-      (loop-search rnd lst weights 0))))
+      (bin-search rnd lst weights 0 (- (length lst) 1)))))
 
 (define (ask-graph)
   (print '(Please enter graph))
