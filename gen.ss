@@ -1,4 +1,5 @@
-#lang scheme/base
+#lang scheme
+(require "drawing.ss")
 #|
 Генетический алгоритм для построения минимального покрывающего множества ребер для графов.
 Автор: Дмитрий Овчинников (2015 г)
@@ -15,7 +16,6 @@
   - параметр к merge-many - "size", вызывается в crossingover.
 3) Количество особей в популяции параметр "individs-count" в функции genetic 
 |#
-
 
 
 #|
@@ -143,6 +143,7 @@ chromo-count - количество хромосом у особи.
   (let ((possible-answers (filter
                            (lambda (x) (= 0 (car x)))
                            population)))
+    (send (get-msg) set-label (string-join (list "Now " (number->string (- 120 population-count)) " iterations done!"))) 
     (cond ((not (null? possible-answers))
            (list #t (length (cadr (car possible-answers))) (cadr (car possible-answers)) ))
           ((or
@@ -159,9 +160,18 @@ chromo-count - количество хромосом у особи.
                            (lambda (x) (calculate-cover x lst (length lst) 0))
                            (generate-k-individs lst chromo-count individs-count '()))))
     (let ((answer (genetic-driver-loop first-population lst weights 120)))
+      (set-EDGES (lst->lst-string lst))
+      (set-VERTICES (get-vertices (get-EDGES)))
+      (set-VERTICES (get-coordinates 280 (/ (* 2 pi) (length (get-VERTICES))) 400 290 (get-VERTICES) '()))
+      (send (get-canvas) refresh-now [lambda (dc) (draw-graph (get-DC))])
       (if (not (car answer))
           (car result)
-          (genetic lst weights individs-count (- chromo-count 1) (cons answer result))))))
+          (begin
+            (draw-edges (get-DC) (lst->lst-string (caddr answer)) "red" 3)
+            (draw-vertices (get-DC) (get-VERTICES))
+            (send (get-DC) draw-text (string-join (list "Size: " (number->string (cadr answer)))) 10 10)
+            (genetic lst weights individs-count (- chromo-count 1) (cons answer result)))))))
+            
              
 
 #|
@@ -316,6 +326,7 @@ find-min.
     
   (let ((cases (file->list "test.txt"))
         (out (open-output-file "genetic-algorithm-result.txt" #:exists 'truncate)))
+    (show-frame)
     (progress out cases (length cases))
     (close-output-port out)))
 
