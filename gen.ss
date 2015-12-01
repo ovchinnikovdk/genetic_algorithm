@@ -128,6 +128,8 @@ generate-k-individs.
       result
       (generate-k-individs lst chromo-size (- k 1) (cons (make-one-individ lst chromo-size '()) result)))) 
 
+(define PARAMS '())
+
 #|
 GENETIC. - Основная функция программы, реализует генетический алгоритм для данной задачи.
 Параметры:
@@ -139,11 +141,24 @@ chromo-count - количество хромосом у особи.
 Если #t ("ДА"), то каков размер и само множество (результат в одном списке вида (#t k (множество)) )
 |#
 (define (genetic lst weights individs-count chromo-count result)
+  (define cur-time (current-inexact-milliseconds))
   (define (genetic-driver-loop population lst weights population-count)
   (let ((possible-answers (filter
                            (lambda (x) (= 0 (car x)))
-                           population)))
-    (send (get-msg) set-label (string-join (list "Now " (number->string (- 120 population-count)) " iterations done!"))) 
+                           population))
+        (count (- 120 population-count))
+        (best (car (find-min population)))
+        (worst (car (find-max population))))
+    (set! PARAMS (cons (list count best worst) PARAMS))
+    (if (> (- (current-inexact-milliseconds) cur-time) 300)
+        (begin
+          (send (get-msg) set-label (string-join (list "Now " (number->string count) " generations died...   "
+                                                       " Best individ parametr: "
+                                                       (number->string best)
+                                                       ", Worst parametr: "
+                                                       (number->string worst))))
+          (set! cur-time (current-inexact-milliseconds)))
+        null)
     (cond ((not (null? possible-answers))
            (list #t (length (cadr (car possible-answers))) (cadr (car possible-answers)) ))
           ((or
@@ -163,9 +178,14 @@ chromo-count - количество хромосом у особи.
       (set-EDGES (lst->lst-string lst))
       (set-VERTICES (get-vertices (get-EDGES)))
       (set-VERTICES (get-coordinates 280 (/ (* 2 pi) (length (get-VERTICES))) 400 290 (get-VERTICES) '()))
+      ;(re-calculate-coordinates (get-VERTICES) '())
       (send (get-canvas) refresh-now [lambda (dc) (draw-graph (get-DC))])
       (if (not (car answer))
-          (car result)
+          (begin
+            (draw-graphics PARAMS (string-join (list (number->string (length (get-VERTICES)))
+                                                     (number->string (length (get-EDGES))))))
+            (set! PARAMS '())
+            (car result))
           (begin
             (draw-edges (get-DC) (lst->lst-string (caddr answer)) "red" 3)
             (draw-vertices (get-DC) (get-VERTICES))
@@ -233,14 +253,26 @@ find-min.
 Результат: Возрвращается элемент с минимальным number*
 |#
 (define (find-min lst)
-  (let ((y (car lst)))
-    (if (null? (cdr lst))
-        y
-        (let ((m (find-min (cdr lst))))
-          (if (< (car m) (car y))
-              m
-              y)))))
+  (if (not (null? lst))
+      (let ((y (car lst)))
+        (if (null? (cdr lst))
+            y
+            (let ((m (find-min (cdr lst))))
+              (if (< (car m) (car y))
+                  m
+                  y))))
+      (list 0 '())))
 
+(define (find-max lst)
+  (if (not (null? lst))
+      (let ((y (car lst)))
+        (if (null? (cdr lst))
+            y
+            (let ((m (find-min (cdr lst))))
+              (if (> (car m) (car y))
+                  m
+                  y))))
+      (list 0 '())))
      
 #|Функция sum-weight.
 Параметры: список, где в каждом вложенном списке первый элемент - вес; накопитель результата.

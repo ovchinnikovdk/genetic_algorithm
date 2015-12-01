@@ -2,6 +2,7 @@
 (require racket/gui/base)
 (require racket/math)
 (require racket/draw)
+(require plot)
 
 (define no-pen (new pen% [style 'transparent]))
 (define blue-brush (new brush% [color "blue"]))
@@ -27,7 +28,7 @@
 (define subframe (new horizontal-panel%
                       [parent frame]  
                       [alignment '(left center)]))
-(define btn (new button% [parent subframe]
+#|(define btn (new button% [parent subframe]
                  [label "Выключить обновление графа"]
                  [callback (lambda (button event)
                              (if (not stop-refresh)
@@ -39,6 +40,7 @@
                                    (set! stop-refresh #f)
                                    (send canvas1 suspend-flush)
                                    (send button set-label "Включить обновление графа"))))]))
+(define (get-btn) btn) |#
 (define msg (new message% [parent subframe]
                  [label "genetic algorithm"]
                  [auto-resize #t]))
@@ -145,6 +147,37 @@
               (get-coordinates rad angle cen-x cen-y (cdr lst) (cons res result)))))
             result))
 
+
+(define (re-calculate-coordinates vertices result)
+  (define (find-all-neighbours elem)
+    (filter (lambda (x) (not (null? x))) (map (lambda (x)
+                                                (if (equal? (caddr elem) (car x))
+                                                    (let ((coord (get-one-coordinate (cadr x) VERTICES)))
+                                                      (list
+                                                       (- (car coord) (car elem))
+                                                       (- (cadr coord) (cadr elem))))
+                                                     (if (equal? (caddr elem) (cadr x))
+                                                         (let ((coord (get-one-coordinate (car x) VERTICES)))
+                                                           (list
+                                                            (- (car coord) (car elem))
+                                                            (- (cadr coord) (cadr elem))))
+                                                         null)))
+                                                EDGES)))
+  (define (calc-sum lst size sum1 sum2)
+    (if (null? lst)
+        (list (/ sum1 size) (/ sum2 size))
+        (calc-sum (cdr lst) size (+ sum1 (car (car lst))) (+ sum2 (cadr (car lst)))))) 
+  (if (null? vertices)
+      (set! VERTICES result)
+      (let ((neighbours (find-all-neighbours (car vertices))))
+        (let ((sum (calc-sum neighbours (length neighbours) 0 0)))
+          (re-calculate-coordinates (cdr vertices)
+                                    (cons (list
+                                       (- (car sum) (car (car vertices)))
+                                       (- (cadr sum) (cadr (car vertices)))
+                                       (caddr (car vertices))) result))))))
+  
+
 (define (draw-vertices dc coords)
   (define (draw-one-vertex dc lst)
     (if (null? lst)
@@ -175,6 +208,30 @@
                       (symbol->string (cadr x)))
                      (else "uknown format")))) lst))
 
+(define (draw-graphics lst file-name)
+  (define (summ lst lst-size res-sum1 res-sum2)
+    (if (null? lst)
+        (ivl (/ res-sum1 lst-size) (/ res-sum2 lst-size))
+        (summ (cdr lst) lst-size (+ (cadr (car lst)) res-sum1) (+ (caddr (car lst)) res-sum2))))
+        
+  (define (loop count lst result)
+    (let ((lst1 (filter (lambda (x) (or (= count (car x)) (= (+ count 1) (car x)))) lst)))
+      (if (= (length lst1) 0)
+          (reverse result)
+          (loop (+ count 2) lst (cons (vector count (summ lst1 (length lst1) 0 0)) result)))))
+  (plot-width 2000)
+  (plot-height 600)
+  (plot-file (discrete-histogram
+        (loop 0 lst '())
+         #:label "Best and worst parametres on each iterations"
+         #:x-min 0
+         #:y-min 0
+         )
+             #:x-label "Количество итераций"
+             #:y-label "Минимальные и максимальные параметры"
+             #:title "График среднего количества покрывающихся ребер на каждом этапе"
+             file-name 'png))
+         
 
 
 (set! VERTICES (get-vertices EDGES))
@@ -184,6 +241,7 @@
 (provide set-EDGES)
 (provide get-VERTICES)
 (provide get-EDGES)
+;(provide get-btn)
 (provide stop-refresh)
 (provide get-canvas)
 (provide DC)
@@ -194,6 +252,7 @@
 (provide get-vertices)
 (provide draw-edges)
 (provide draw-graph)
+(provide draw-graphics)
 (provide get-msg)
 (provide lst->lst-string)
-
+(provide re-calculate-coordinates)
