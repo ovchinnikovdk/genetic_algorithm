@@ -178,7 +178,6 @@ chromo-count - количество хромосом у особи.
       (set-EDGES (lst->lst-string lst))
       (set-VERTICES (get-vertices (get-EDGES)))
       (set-VERTICES (get-coordinates 280 (/ (* 2 pi) (length (get-VERTICES))) 400 290 (get-VERTICES) '()))
-      ;(re-calculate-coordinates (get-VERTICES) '())
       (send (get-canvas) refresh-now [lambda (dc) (draw-graph (get-DC))])
       (if (not (car answer))
           (begin

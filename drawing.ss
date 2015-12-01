@@ -8,6 +8,9 @@
 (define blue-brush (new brush% [color "blue"]))
 
 
+#|
+Инициализация переменных для создания окнаы
+|#
 
 (define frame (new frame%
                      [label "Genetic algorithm"]
@@ -58,31 +61,53 @@
 
 ;/////////////////////////
 ;       GLOBAL NAMES
-;
+;   ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 
+#|
+VERTICES - переменная, хранит все вершины графа и его координаты.
+|#
 (define VERTICES (list "one" "two" "three" "four"
                                  "five" "six" "seven" "eight"))
 (define (set-VERTICES value)
   (set! VERTICES value))
 (define (get-VERTICES) VERTICES)
 
+#|
+EDGES - переменная, список всех ребер графа.
+|#
 (define EDGES (list (list "one" "six") (list "two" "three") (list "one" "five") (list "two" "seven")(list "seven" "eight")))
 (define (set-EDGES value)
   (set! EDGES value))
 (define (get-EDGES) EDGES)
 
+
+#|
+DC - переменная - Drawing-context, хранит контекст для прорисовки графа на холсте. 
+|#
 (define DC null)
 (define (get-DC)
   DC)
 
+#|
+stop-refresh - переменная, (boolean), - показатель обновления экрана. 
+|#
 (define stop-refresh #t)
 ;  //////////////////////
+
+
+#|
+Функция draw-graph.
+Рисует сначала ребра, потом вершины.
+|#
 (define (draw-graph dc)
   (send dc set-smoothing 'aligned)
   (draw-edges dc EDGES "LightBlue" 2)
   (draw-vertices dc VERTICES))
 
-
+#|
+get-vertices.
+Функция достает из списка ребер все имеющиеся в нем вершины.ы
+|#
 (define (get-vertices lst)
   (define (in-list? elem lst)
     (= 0 (length (filter (lambda (x) (equal? elem x))
@@ -98,7 +123,15 @@
                (search-loop (cdr lst) (cons (cadr (car lst)) result)))
               (else (search-loop (cdr lst) result)))))
   (search-loop lst '()))
-                                                          
+
+
+#|
+get-one-coordinate.
+Функция достает координаты для определенной вершины.
+Параметры:
+elem - вершина,
+coords - список координат в виде (x y "string_name")
+|#
 (define (get-one-coordinate elem coords)
   (if (null? coords)
       (list 0 0 "not found")
@@ -106,6 +139,16 @@
           (car coords)
           (get-one-coordinate elem (cdr coords)))))
 
+
+#|
+draw-edges
+Функция рисует ребра используя сплайны.
+параметры:
+dc- drawing context
+edges - list
+color - string
+size - integer
+|#
 (define (draw-edges dc edges color size)
   (send dc set-pen color size 'solid)
   (define (get-third-point elem1 elem2)
@@ -117,9 +160,7 @@
            (y2 (+ 5 (cadr elem2))))
        (let ((proj (make-projection x1 y1 x2 y2)))
          (list (+ (/ (+ x1 x2) 2) (/ (car proj) 8))
-               (+ (/ (+ y1 y2) 2) (/ (cadr proj) 8))))))
-       
-       
+               (+ (/ (+ y1 y2) 2) (/ (cadr proj) 8))))))  
   (define (loop dc edges)
     (if (null? edges)
         null
@@ -133,6 +174,17 @@
             (loop dc (cdr edges))))))
   (loop dc edges))
 
+
+#|
+get-coordinates.
+Функция располагает список из вершин на плоскости.(задает координаты)
+Параметры:
+rad - (integer), - радиус круга, по которому будут располагаться вершины
+angle - (real) угол в радианах.
+cen-x, cen-y - (integer, integer) - координаты центра,
+lst - (list) - список вершин.
+result (list) - накопитель результата.ы
+|#
 (define (get-coordinates rad angle cen-x cen-y lst result)
     (if (not (null? lst))
         (if (null? result)
@@ -173,11 +225,17 @@
         (let ((sum (calc-sum neighbours (length neighbours) 0 0)))
           (re-calculate-coordinates (cdr vertices)
                                     (cons (list
-                                       (- (car sum) (car (car vertices)))
-                                       (- (cadr sum) (cadr (car vertices)))
+                                       (+ (/ (car sum) 3) (car (car vertices)))
+                                       (+ (/ (cadr sum) 3) (cadr (car vertices)))
                                        (caddr (car vertices))) result))))))
   
-
+#|
+draw-vetices.
+Функция рисует вершины графа в соответствующих координатах на холсте.
+Параметры:
+dc - (dc%) - Drawing-context  - контекст холста.
+coords - (list) - список координат вершин.
+|#
 (define (draw-vertices dc coords)
   (define (draw-one-vertex dc lst)
     (if (null? lst)
@@ -191,6 +249,14 @@
   (send dc set-brush "blue" 'solid)
   (draw-one-vertex dc coords))
 
+
+#|
+lst->lst-string.
+Функция переводит название вершины в строковый формат.
+(Нужно для прорисовки названия вершины)
+Параметры:
+lst - (list) - список ребер.
+|#
 (define (lst->lst-string lst)
   (map (lambda (x)
          (list (cond ((string? (car x))
@@ -208,6 +274,13 @@
                       (symbol->string (cadr x)))
                      (else "uknown format")))) lst))
 
+#|
+draw-graphics.
+Функция рисует графики в файлы.
+Параметры:
+lst - (list) - статистика, накопленная в ходе работы генетического алгоритма.
+file-name - (string) - имя файла, для сохранения.
+|#
 (define (draw-graphics lst file-name)
   (define (summ lst lst-size res-sum1 res-sum2)
     (if (null? lst)
@@ -225,7 +298,6 @@
         (loop 0 lst '())
          #:label "Best and worst parametres on each iterations"
          #:x-min 0
-         #:y-min 0
          )
              #:x-label "Количество итераций"
              #:y-label "Минимальные и максимальные параметры"
@@ -236,6 +308,7 @@
 
 (set! VERTICES (get-vertices EDGES))
 (set! VERTICES (get-coordinates 280 (/ (* 2 pi) (length VERTICES)) 400 290 VERTICES '()))
+
 
 (provide set-VERTICES)
 (provide set-EDGES)
