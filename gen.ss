@@ -330,6 +330,7 @@ find-min.
       (print result))))
     
 ;(ask-graph)
+(define times '())
 #|
 Функция для работы алгоритма через файлы (удобнее работать с тестами)
 |#
@@ -346,19 +347,26 @@ find-min.
     (if (null? lst)
         (display "all tests have done!\n")
         (begin
-          (display "working on ")
-          (display (- size (length (cdr lst))))
-          (display " of ")
-          (display size)
-          (newline)
-          (display (call-genetic (car lst)) out)
-          (display "\n" out)
-          (progress out (cdr lst) size))))
+          (let ((time (current-inexact-milliseconds)))
+            (display "working on ")
+            (display (- size (length (cdr lst))))
+            (display " of ")
+            (display size)
+            (display (call-genetic (car lst)) out)
+            (display "\n" out)
+            (display " Time:")
+            (display (/ (truncate (- (current-inexact-milliseconds) time)) 1000))
+            (display " s. Graph-size: ")
+            (display (length (car (car lst))))
+            (newline)
+            (set! times (cons (vector (length (car (car lst))) (/ (truncate (- (current-inexact-milliseconds) time)) 1000)) times))
+            (progress out (cdr lst) size)))))
     
   (let ((cases (file->list "test.txt"))
         (out (open-output-file "genetic-algorithm-result.txt" #:exists 'truncate)))
     (show-frame)
     (progress out cases (length cases))
+    (draw-graphics-time times "time")
     (close-output-port out)))
 
 (with-files)

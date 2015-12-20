@@ -303,8 +303,19 @@ file-name - (string) - имя файла, для сохранения.
              #:y-label "Минимальные и максимальные параметры"
              #:title "График среднего количества покрывающихся ребер на каждом этапе"
              file-name 'png))
-         
 
+(define (draw-graphics-time lst file-name)
+  (plot-width 2000)
+  (plot-height 600)
+  (plot-file (discrete-histogram
+        lst
+         #:label "Время выполнения алгоритма"
+         #:x-min 0
+         )
+             #:x-label "Количество ребер"
+             #:y-label "Время выполнения алгоритма"
+             #:title "График времени выполнения"
+             file-name 'png))
 
 (set! VERTICES (get-vertices EDGES))
 (set! VERTICES (get-coordinates 280 (/ (* 2 pi) (length VERTICES)) 400 290 VERTICES '()))
@@ -326,6 +337,7 @@ file-name - (string) - имя файла, для сохранения.
 (provide draw-edges)
 (provide draw-graph)
 (provide draw-graphics)
+(provide draw-graphics-time)
 (provide get-msg)
 (provide lst->lst-string)
 (provide re-calculate-coordinates)
