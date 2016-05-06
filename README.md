@@ -8,10 +8,10 @@
 Параметры алгоритма, которые нужно модифицировать для достижения<br/>
 оптимального (качество/время) результата:<br/>
 1) Количество итераций (поколений)<br/>
-   - параметр к genetic-driver-loop под названием population-count.<br/>
+   * параметр к genetic-driver-loop под названием population-count.<br/>
 (вызывается в функции genetic)<br/>
 2) Количество потомков у каждых двух родителей<br/>
-  - параметр к merge-many - "size", вызывается в crossingover.<br/>
+   * параметр к merge-many - "size", вызывается в crossingover.<br/>
 3) Количество особей в популяции параметр "individs-count" в функции genetic <br/><br/>
 
 <img src="visualization.jpg"/>
@@ -28,8 +28,8 @@ While working on a complete graph with 40 edges ~ 5-7 sec. <br/>
 Algorithm parameters that need to be modified to achieve <br/>
 the best (quality / time) result: <br/>
 1) The number of iterations (generations) <br/>
-   - Option to "genetic-driver-loop"  called "population-count". <br/>
+   * Option to "genetic-driver-loop"  called "population-count". <br/>
 (called in a function "genetic") <br/>
 2) Number of offspring from each of two parents <br/>
-  - Option to merge-many - "size", called in crossingover. <br/>
+   * Option to merge-many - "size", called in crossingover. <br/>
 3) The number of individuals in a population setting "individs-count" as a function of genetic <br/> <br/>
